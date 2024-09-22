@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        button {
+            margin-top: 10px;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="startPage" class="page active">
+        <h1>Welcome to the Quiz Portal</h1>
+        <input type="text" id="userName" placeholder="Enter your name">
+        <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quizPage" class="page">
+        <h1>Quiz</h1>
+        <div id="questions"></div>
+        <button onclick="submitQuiz()">Submit Quiz</button>
+    </div>
+
+    <div id="completePage" class="page">
+        <h1>Quiz Complete</h1>
+        <p>Congratulations! You have completed the quiz.</p>
+        <button onclick="newQuiz()">Start New Quiz</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                type: 'radio',
+                question: 'What is the capital of France?',
+                options: ['London', 'Berlin', 'Paris', 'Madrid'],
+                answer: 'Paris'
+            },
+            {
+                type: 'checkbox',
+                question: 'Which of these are programming languages?',
+                options: ['HTML', 'CSS', 'JavaScript', 'Photoshop'],
+                answer: ['HTML', 'CSS', 'JavaScript']
+            },
+            {
+                type: 'text',
+                question: 'What is 2 + 2?',
+                answer: '4'
+            },
+            {
+                type: 'textarea',
+                question: 'Briefly explain what HTML stands for.',
+                answer: 'Hypertext Markup Language'
+            },
+            {
+                type: 'select',
+                question: 'Which planet is known as the Red Planet?',
+                options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
+                answer: 'Mars'
+            }
+        ];
+
+        let currentUser = '';
+        let userAnswers = [];
+
+        function startQuiz() {
+            currentUser = document.getElementById('userName').value;
+            if (currentUser.trim() === '') {
+                alert('Please enter your name.');
+                return;
+            }
+            showPage('quizPage');
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const questionsContainer = document.getElementById('questions');
+            questionsContainer.innerHTML = '';
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `<p>${index + 1}. ${q.question}</p>`;
+
+                switch (q.type) {
+                    case 'radio':
+                    case 'checkbox':
+                        q.options.forEach(option => {
+                            const input = document.createElement('input');
+                            input.type = q.type;
+                            input.name = `q${index}`;
+                            input.value = option;
+                            const label = document.createElement('label');
+                            label.appendChild(input);
+                            label.appendChild(document.createTextNode(option));
+                            questionDiv.appendChild(label);
+                        });
+                        break;
+                    case 'text':
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = `q${index}`;
+                        questionDiv.appendChild(input);
+                        break;
+                    case 'textarea':
+                        const textarea = document.createElement('textarea');
+                        textarea.name = `q${index}`;
+                        questionDiv.appendChild(textarea);
+                        break;
+                    case 'select':
+                        const select = document.createElement('select');
+                        select.name = `q${index}`;
+                        q.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            select.appendChild(optionElement);
+                        });
+                        questionDiv.appendChild(select);
+                        break;
+                }
+
+                questionsContainer.appendChild(questionDiv);
+            });
+        }
+
+        function submitQuiz() {
+            userAnswers = [];
+            let allAnswered = true;
+
+            questions.forEach((q, index) => {
+                const answerElement = document.querySelector(`[name="q${index}"]`);
+                let answer;
+
+                if (q.type === 'radio' || q.type === 'checkbox') {
+                    const checkedInputs = document.querySelectorAll(`[name="q${index}"]:checked`);
+                    answer = Array.from(checkedInputs).map(input => input.value);
+                    if (q.type === 'radio') {
+                        answer = answer[0];
+                    }
+                } else {
+                    answer = answerElement.value;
+                }
+
+                if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+                    allAnswered = false;
+                }
+
+                userAnswers.push(answer);
+            });
+
+            if (!allAnswered) {
+                alert('Please answer all questions before submitting.');
+                return;
+            }
+
+            // Store answers in localStorage
+            localStorage.setItem(`${currentUser}_answers`, JSON.stringify(userAnswers));
+
+            showPage('completePage');
+        }
+
+        function newQuiz() {
+            currentUser = '';
+            userAnswers = [];
+            document.getElementById('userName').value = '';
+            showPage('startPage');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
